@@ -33,6 +33,18 @@ class _ClientScreenState extends State<ClientScreen> {
     super.dispose();
   }
 
+  void _formatDurationHelper() {}
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    if (duration.inHours > 0) {
+      return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+    }
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
   void _onDetect(BarcodeCapture capture) {
     if (!_isScanning) return;
     
@@ -254,20 +266,51 @@ class _ClientScreenState extends State<ClientScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              // Dummy progress bar (read-only for client)
-              SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 4,
-                  activeTrackColor: const Color(0xFF00E5FF),
-                  inactiveTrackColor: Colors.white.withOpacity(0.2),
-                  thumbShape: SliderComponentShape.noThumb, // Client can't seek
-                ),
-                child: Slider(
-                  value: wsService.position,
-                  min: 0,
-                  max: 100,
-                  onChanged: null,
-                ),
+              // Progress bar and timestamps
+              StreamBuilder<Duration>(
+                stream: wsService.audioPlayer.positionStream,
+                builder: (context, snapshot) {
+                  final position = snapshot.data ?? Duration.zero;
+                  final duration = wsService.audioPlayer.duration ?? const Duration(seconds: 1);
+                  double sliderVal = position.inSeconds.toDouble();
+                  double maxVal = duration.inSeconds.toDouble();
+                  if (sliderVal > maxVal) sliderVal = maxVal;
+                  
+                  return Column(
+                    children: [
+                      SliderTheme(
+                        data: SliderThemeData(
+                          trackHeight: 4,
+                          activeTrackColor: const Color(0xFF00E5FF),
+                          inactiveTrackColor: Colors.white.withOpacity(0.2),
+                          thumbShape: SliderComponentShape.noThumb, // Client can't seek
+                        ),
+                        child: Slider(
+                          value: sliderVal,
+                          min: 0,
+                          max: maxVal == 0 ? 1 : maxVal,
+                          onChanged: null,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _formatDuration(position),
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                            Text(
+                              _formatDuration(duration),
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }
               ),
               const SizedBox(height: 20),
               // Status Indicator

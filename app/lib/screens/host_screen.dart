@@ -33,6 +33,18 @@ class _HostScreenState extends State<HostScreen> {
     super.dispose();
   }
 
+  void _formatDurationHelper() {}
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    if (duration.inHours > 0) {
+      return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+    }
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
   Future<void> _pickAndUploadSong() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.audio,
@@ -232,23 +244,43 @@ class _HostScreenState extends State<HostScreen> {
               double maxVal = duration.inSeconds.toDouble();
               if (sliderVal > maxVal) sliderVal = maxVal;
               
-              return SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 4,
-                  activeTrackColor: const Color(0xFF00E5FF),
-                  inactiveTrackColor: Colors.white.withOpacity(0.2),
-                  thumbColor: Colors.white,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                ),
-                child: Slider(
-                  value: sliderVal,
-                  min: 0,
-                  max: maxVal == 0 ? 1 : maxVal,
-                  onChanged: hasSong ? (val) {
-                    wsService.audioPlayer.seek(Duration(seconds: val.toInt()));
-                    wsService.syncState(wsService.status, val);
-                  } : null,
-                ),
+              return Column(
+                children: [
+                  SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 4,
+                      activeTrackColor: const Color(0xFF00E5FF),
+                      inactiveTrackColor: Colors.white.withOpacity(0.2),
+                      thumbColor: Colors.white,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    ),
+                    child: Slider(
+                      value: sliderVal,
+                      min: 0,
+                      max: maxVal == 0 ? 1 : maxVal,
+                      onChanged: hasSong ? (val) {
+                        wsService.audioPlayer.seek(Duration(seconds: val.toInt()));
+                        wsService.syncState(wsService.status, val);
+                      } : null,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _formatDuration(position),
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        Text(
+                          _formatDuration(duration),
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               );
             }
           ),
@@ -260,7 +292,9 @@ class _HostScreenState extends State<HostScreen> {
                 icon: const Icon(Icons.skip_previous, color: Colors.white),
                 iconSize: 32,
                 onPressed: hasSong ? () {
-                  final newPos = (wsService.audioPlayer.position.inSeconds - 10).clamp(0, wsService.audioPlayer.duration?.inSeconds ?? 0);
+                  int maxDuration = wsService.audioPlayer.duration?.inSeconds ?? 999999;
+                  if (maxDuration <= 0) maxDuration = 999999;
+                  final newPos = (wsService.audioPlayer.position.inSeconds - 10).clamp(0, maxDuration);
                   wsService.audioPlayer.seek(Duration(seconds: newPos));
                   wsService.syncState(wsService.status, newPos.toDouble());
                 } : null,
@@ -287,7 +321,9 @@ class _HostScreenState extends State<HostScreen> {
                 icon: const Icon(Icons.skip_next, color: Colors.white),
                 iconSize: 32,
                 onPressed: hasSong ? () {
-                  final newPos = (wsService.audioPlayer.position.inSeconds + 10).clamp(0, wsService.audioPlayer.duration?.inSeconds ?? 0);
+                  int maxDuration = wsService.audioPlayer.duration?.inSeconds ?? 999999;
+                  if (maxDuration <= 0) maxDuration = 999999;
+                  final newPos = (wsService.audioPlayer.position.inSeconds + 10).clamp(0, maxDuration);
                   wsService.audioPlayer.seek(Duration(seconds: newPos));
                   wsService.syncState(wsService.status, newPos.toDouble());
                 } : null,
