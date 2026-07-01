@@ -259,7 +259,11 @@ class _HostScreenState extends State<HostScreen> {
               IconButton(
                 icon: const Icon(Icons.skip_previous, color: Colors.white),
                 iconSize: 32,
-                onPressed: () {}, // Optional Phase
+                onPressed: hasSong ? () {
+                  final newPos = (wsService.audioPlayer.position.inSeconds - 10).clamp(0, wsService.audioPlayer.duration?.inSeconds ?? 0);
+                  wsService.audioPlayer.seek(Duration(seconds: newPos));
+                  wsService.syncState(wsService.status, newPos.toDouble());
+                } : null,
               ),
               GestureDetector(
                 onTap: hasSong ? () {
@@ -282,7 +286,11 @@ class _HostScreenState extends State<HostScreen> {
               IconButton(
                 icon: const Icon(Icons.skip_next, color: Colors.white),
                 iconSize: 32,
-                onPressed: () {}, // Optional Phase
+                onPressed: hasSong ? () {
+                  final newPos = (wsService.audioPlayer.position.inSeconds + 10).clamp(0, wsService.audioPlayer.duration?.inSeconds ?? 0);
+                  wsService.audioPlayer.seek(Duration(seconds: newPos));
+                  wsService.syncState(wsService.status, newPos.toDouble());
+                } : null,
               ),
             ],
           ),

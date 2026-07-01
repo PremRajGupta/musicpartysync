@@ -38,7 +38,21 @@ class _ClientScreenState extends State<ClientScreen> {
     
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-      final String roomId = barcodes.first.rawValue!;
+      String scannedValue = barcodes.first.rawValue!;
+      String roomId = scannedValue;
+      
+      // If the QR code is a URL, extract the 'room' parameter
+      if (scannedValue.startsWith('http')) {
+        try {
+          Uri uri = Uri.parse(scannedValue);
+          if (uri.queryParameters.containsKey('room')) {
+            roomId = uri.queryParameters['room']!;
+          }
+        } catch (e) {
+          print("Error parsing URI: $e");
+        }
+      }
+      
       setState(() => _isScanning = false);
       Provider.of<WebSocketService>(context, listen: false).joinRoom(roomId);
     }
