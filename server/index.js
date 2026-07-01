@@ -9,6 +9,16 @@ const fs = require('fs');
 const app = express();
 app.use(cors());
 
+const frontendUrl = process.env.FRONTEND_URL || 'https://music-party-clg-2026.web.app/';
+
+app.get('/', (req, res) => {
+  res.redirect(frontendUrl);
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Set up storage for uploaded songs
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
