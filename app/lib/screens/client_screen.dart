@@ -19,13 +19,11 @@ class _ClientScreenState extends State<ClientScreen> {
   @override
   void initState() {
     super.initState();
-    _isScanning = widget.initialRoom == null;
+    _isScanning = true;
     _wsService = Provider.of<WebSocketService>(context, listen: false);
     
     if (widget.initialRoom != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _wsService.joinRoom(widget.initialRoom!);
-      });
+      _roomController.text = widget.initialRoom!;
     }
   }
 

@@ -20,14 +20,18 @@ class WebSocketService extends ChangeNotifier {
   String get serverWsUrl => 'wss://$serverHost';
   String get serverHttpUrl => 'https://$serverHost';
 
+  int _lastSyncTime = 0;
+
   WebSocketService() {
     // Listen to local player position to update UI locally
     audioPlayer.positionStream.listen((pos) {
       if (isHost && status == 'playing') {
-        position = pos.inSeconds.toDouble();
+        position = pos.inMilliseconds / 1000.0;
         notifyListeners();
-        // Periodically sync position to clients (e.g. every 2 seconds to avoid flooding)
-        if (pos.inSeconds % 2 == 0) {
+        // Sync position to clients every 3 seconds to avoid flooding
+        int now = DateTime.now().millisecondsSinceEpoch;
+        if (now - _lastSyncTime > 3000) {
+          _lastSyncTime = now;
           _sendSyncState(status, position);
         }
       }
@@ -98,9 +102,10 @@ class WebSocketService extends ChangeNotifier {
 
     // Client syncing logic
     if (!isHost) {
-      // If position difference is more than 2 seconds, seek
-      if ((audioPlayer.position.inSeconds.toDouble() - newPosition).abs() > 2) {
-        await audioPlayer.seek(Duration(seconds: newPosition.toInt()));
+      double currentPos = audioPlayer.position.inMilliseconds / 1000.0;
+      // If position difference is more than 50ms, seek to sync precisely
+      if ((currentPos - newPosition).abs() > 0.05) {
+        await audioPlayer.seek(Duration(milliseconds: (newPosition * 1000).toInt()));
       }
       
       if (newStatus == 'playing' && audioPlayer.playing == false) {
