@@ -15,10 +15,10 @@ class WebSocketService extends ChangeNotifier {
   
   final AudioPlayer audioPlayer = AudioPlayer();
 
-  // Use your computer's local IP address so mobile devices can connect
-  final String serverHost = '192.168.21.223:3000';
-  String get serverWsUrl => 'ws://$serverHost';
-  String get serverHttpUrl => 'http://$serverHost';
+  // Use the live Render backend URL
+  final String serverHost = 'musicpartysync.onrender.com';
+  String get serverWsUrl => 'wss://$serverHost';
+  String get serverHttpUrl => 'https://$serverHost';
 
   WebSocketService() {
     // Listen to local player position to update UI locally
